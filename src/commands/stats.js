@@ -1,6 +1,12 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { getPlayerStats, getLeaderboard, getFactionStats, getHeadToHead } = require('../database/stats');
 
+const GAME_TYPE_CHOICES = [
+  { name: 'All Games', value: 'all' },
+  { name: 'Spearhead', value: 'spearhead' },
+  { name: 'Age of Sigmar', value: 'aos' },
+];
+
 const statsCommand = {
   data: new SlashCommandBuilder()
     .setName('stats')
@@ -10,18 +16,28 @@ const statsCommand = {
         .setName('player')
         .setDescription('Player name to look up (leave empty for leaderboard)')
         .setRequired(false)
+    )
+    .addStringOption(option =>
+      option
+        .setName('game')
+        .setDescription('Filter by game type')
+        .setRequired(false)
+        .addChoices(...GAME_TYPE_CHOICES)
     ),
 
   async execute(interaction) {
     const playerName = interaction.options.getString('player');
+    const gameTypeOption = interaction.options.getString('game') || 'all';
+    const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
+    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
 
     if (playerName) {
       // Show individual player stats
-      const stats = getPlayerStats(playerName);
+      const stats = getPlayerStats(playerName, gameType);
       
       if (!stats || stats.total_games === 0) {
         return interaction.reply({
-          content: `❌ No battle records found for **${playerName}**`,
+          content: `❌ No battle records found for **${playerName}**${gameType ? ` in ${gameLabel}` : ''}`,
           ephemeral: true,
         });
       }
@@ -33,6 +49,7 @@ const statsCommand = {
       const embed = new EmbedBuilder()
         .setColor(0x8b0000)
         .setTitle(`⚔️ Battle Stats: ${playerName}`)
+        .setDescription(gameType ? `📊 **${gameLabel}** stats` : '📊 All game types')
         .addFields(
           { name: '🏆 Wins', value: `${stats.wins}`, inline: true },
           { name: '💀 Losses', value: `${stats.losses}`, inline: true },
@@ -47,11 +64,11 @@ const statsCommand = {
       await interaction.reply({ embeds: [embed] });
     } else {
       // Show leaderboard
-      const leaders = getLeaderboard(10);
+      const leaders = getLeaderboard(10, gameType);
       
       if (leaders.length === 0) {
         return interaction.reply({
-          content: '❌ No battle records yet! Use `/battlereport` to log your first game.',
+          content: `❌ No battle records yet${gameType ? ` for ${gameLabel}` : ''}! Use \`/battlereport\` to log your first game.`,
           ephemeral: true,
         });
       }
@@ -64,9 +81,9 @@ const statsCommand = {
 
       const embed = new EmbedBuilder()
         .setColor(0xffd700)
-        .setTitle('🏆 Battle Leaderboard')
+        .setTitle(`🏆 Battle Leaderboard${gameType ? ` - ${gameLabel}` : ''}`)
         .setDescription(leaderboardText)
-        .setFooter({ text: 'Use /stats <player> for detailed stats' })
+        .setFooter({ text: 'Use /stats player:<name> game:<type> for detailed stats' })
         .setTimestamp();
 
       await interaction.reply({ embeds: [embed] });
@@ -77,14 +94,25 @@ const statsCommand = {
 const factionStatsCommand = {
   data: new SlashCommandBuilder()
     .setName('factionstats')
-    .setDescription('View faction win rates'),
+    .setDescription('View faction win rates')
+    .addStringOption(option =>
+      option
+        .setName('game')
+        .setDescription('Filter by game type')
+        .setRequired(false)
+        .addChoices(...GAME_TYPE_CHOICES)
+    ),
 
   async execute(interaction) {
-    const factions = getFactionStats(15);
+    const gameTypeOption = interaction.options.getString('game') || 'all';
+    const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
+    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
+    
+    const factions = getFactionStats(15, gameType);
     
     if (factions.length === 0) {
       return interaction.reply({
-        content: '❌ No battle records yet!',
+        content: `❌ No battle records yet${gameType ? ` for ${gameLabel}` : ''}!`,
         ephemeral: true,
       });
     }
@@ -97,7 +125,7 @@ const factionStatsCommand = {
 
     const embed = new EmbedBuilder()
       .setColor(0x8b0000)
-      .setTitle('📊 Faction Win Rates')
+      .setTitle(`📊 Faction Win Rates${gameType ? ` - ${gameLabel}` : ''}`)
       .setDescription(factionText)
       .setFooter({ text: 'Minimum 2 games to appear' })
       .setTimestamp();
@@ -121,17 +149,27 @@ const headToHeadCommand = {
         .setName('player2')
         .setDescription('Second player name')
         .setRequired(true)
+    )
+    .addStringOption(option =>
+      option
+        .setName('game')
+        .setDescription('Filter by game type')
+        .setRequired(false)
+        .addChoices(...GAME_TYPE_CHOICES)
     ),
 
   async execute(interaction) {
     const player1 = interaction.options.getString('player1');
     const player2 = interaction.options.getString('player2');
+    const gameTypeOption = interaction.options.getString('game') || 'all';
+    const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
+    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
 
-    const h2h = getHeadToHead(player1, player2);
+    const h2h = getHeadToHead(player1, player2, gameType);
     
     if (!h2h || h2h.total_games === 0) {
       return interaction.reply({
-        content: `❌ No battles found between **${player1}** and **${player2}**`,
+        content: `❌ No battles found between **${player1}** and **${player2}**${gameType ? ` in ${gameLabel}` : ''}`,
         ephemeral: true,
       });
     }
@@ -139,12 +177,12 @@ const headToHeadCommand = {
     const embed = new EmbedBuilder()
       .setColor(0x8b0000)
       .setTitle(`⚔️ Head-to-Head: ${player1} vs ${player2}`)
+      .setDescription(gameType ? `📊 **${gameLabel}** - Total games: ${h2h.total_games}` : `Total games: ${h2h.total_games}`)
       .addFields(
         { name: player1, value: `${h2h.player1_wins} wins`, inline: true },
         { name: 'Draws', value: `${h2h.draws}`, inline: true },
         { name: player2, value: `${h2h.player2_wins} wins`, inline: true },
       )
-      .setDescription(`Total games: ${h2h.total_games}`)
       .setFooter({ text: 'May your dice roll true' })
       .setTimestamp();
 

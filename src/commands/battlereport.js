@@ -42,6 +42,8 @@ module.exports = {
       photos,
       channelId: interaction.channelId,
       gameType: null,
+      pointsSize: null,      // For AoS
+      battleplan: null,      // For AoS
       player1: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
       player2: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
       date: '',

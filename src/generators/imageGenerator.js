@@ -40,7 +40,7 @@ function generateBattleReportImage(reportData) {
   drawCornerDecorations(ctx, width, height);
 
   // Draw header
-  drawHeader(ctx, width, reportData.gameType);
+  drawHeader(ctx, width, reportData);
 
   // Draw date
   drawDate(ctx, width, reportData.date);
@@ -154,7 +154,9 @@ function drawCornerDecorations(ctx, width, height) {
   });
 }
 
-function drawHeader(ctx, width, gameType) {
+function drawHeader(ctx, width, reportData) {
+  const { gameType, pointsSize, battleplan } = reportData;
+  
   // "BATTLE REPORT" header
   ctx.fillStyle = COLORS.textDark;
   ctx.font = 'bold 42px ' + FONT_FAMILY;
@@ -169,8 +171,11 @@ function drawHeader(ctx, width, gameType) {
   ctx.fillText('BATTLE REPORT', width / 2, 70);
   ctx.shadowColor = 'transparent';
 
-  // Game type badge
-  const badgeText = gameType.toUpperCase();
+  // Game type badge - show points for AoS
+  let badgeText = gameType.toUpperCase();
+  if (gameType === 'aos' && pointsSize) {
+    badgeText = `AGE OF SIGMAR - ${pointsSize} PTS`;
+  }
   const badgeWidth = ctx.measureText(badgeText).width + 30;
   const badgeX = width / 2 - badgeWidth / 2;
   const badgeY = 95;

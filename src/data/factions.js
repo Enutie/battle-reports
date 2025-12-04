@@ -2,9 +2,16 @@
 
 const GAME_TYPES = [
   { value: 'spearhead', label: 'Spearhead', emoji: '⚔️' },
+  { value: 'aos', label: 'Age of Sigmar', emoji: '🛡️' },
   // Future game types:
-  // { value: 'aos', label: 'Age of Sigmar', emoji: '🛡️' },
   // { value: '40k', label: 'Warhammer 40,000', emoji: '🔫' },
+];
+
+// Points options for AoS
+const AOS_POINTS = [
+  { value: '1000', label: '1000 Points', emoji: '⚔️' },
+  { value: '1500', label: '1500 Points', emoji: '⚔️' },
+  { value: '2000', label: '2000 Points', emoji: '🏆' },
 ];
 
 // Factions organized by Grand Alliance with Spearhead names
@@ -83,6 +90,10 @@ function getGrandAlliances() {
   return GRAND_ALLIANCES;
 }
 
+function getAosPoints() {
+  return AOS_POINTS;
+}
+
 function getFactionByValue(gameType, value) {
   const factions = getFactionsByGameType(gameType);
   return factions.find(f => f.value === value);
@@ -92,7 +103,9 @@ module.exports = {
   GAME_TYPES,
   SPEARHEAD_FACTIONS,
   GRAND_ALLIANCES,
+  AOS_POINTS,
   getFactionsByGameType,
   getGrandAlliances,
+  getAosPoints,
   getFactionByValue,
 };

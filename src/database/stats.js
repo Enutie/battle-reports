@@ -11,6 +11,8 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT NOT NULL,
     game_type TEXT NOT NULL,
+    points_size TEXT,
+    battleplan TEXT,
     player1_name TEXT NOT NULL,
     player1_faction TEXT NOT NULL,
     player1_spearhead TEXT,
@@ -28,6 +30,7 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_player2 ON battles(player2_name);
   CREATE INDEX IF NOT EXISTS idx_faction1 ON battles(player1_faction);
   CREATE INDEX IF NOT EXISTS idx_faction2 ON battles(player2_faction);
+  CREATE INDEX IF NOT EXISTS idx_game_type ON battles(game_type);
 `);
 
 // Save a battle report
@@ -41,16 +44,18 @@ function saveBattle(session) {
 
   const stmt = db.prepare(`
     INSERT INTO battles (
-      date, game_type, 
+      date, game_type, points_size, battleplan,
       player1_name, player1_faction, player1_spearhead, player1_vp,
       player2_name, player2_faction, player2_spearhead, player2_vp,
       winner_name, notes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   const result = stmt.run(
     session.date,
     session.gameType,
+    session.pointsSize || null,
+    session.battleplan || null,
     session.player1.name,
     session.player1.factionLabel,
     session.player1.spearhead || null,
@@ -66,9 +71,9 @@ function saveBattle(session) {
   return result.lastInsertRowid;
 }
 
-// Get player stats
-function getPlayerStats(playerName) {
-  const stats = db.prepare(`
+// Get player stats (filtered by game type)
+function getPlayerStats(playerName, gameType = null) {
+  let query = `
     SELECT 
       COUNT(*) as total_games,
       SUM(CASE WHEN winner_name = ? THEN 1 ELSE 0 END) as wins,
@@ -76,27 +81,36 @@ function getPlayerStats(playerName) {
       SUM(CASE WHEN winner_name IS NULL THEN 1 ELSE 0 END) as draws,
       SUM(CASE WHEN player1_name = ? THEN player1_vp ELSE player2_vp END) as total_vp
     FROM battles
-    WHERE player1_name = ? OR player2_name = ?
-  `).get(playerName, playerName, playerName, playerName, playerName);
+    WHERE (player1_name = ? OR player2_name = ?)
+  `;
+  
+  const params = [playerName, playerName, playerName, playerName, playerName];
+  
+  if (gameType) {
+    query += ` AND game_type = ?`;
+    params.push(gameType);
+  }
 
-  return stats;
+  return db.prepare(query).get(...params);
 }
 
-// Get leaderboard
-function getLeaderboard(limit = 10) {
+// Get leaderboard (filtered by game type)
+function getLeaderboard(limit = 10, gameType = null) {
+  const gameTypeFilter = gameType ? `WHERE game_type = '${gameType}'` : '';
+  
   const query = `
     WITH player_stats AS (
       SELECT player1_name as name, 
              CASE WHEN winner_name = player1_name THEN 1 ELSE 0 END as win,
              CASE WHEN winner_name IS NOT NULL AND winner_name != player1_name THEN 1 ELSE 0 END as loss,
              CASE WHEN winner_name IS NULL THEN 1 ELSE 0 END as draw
-      FROM battles
+      FROM battles ${gameTypeFilter}
       UNION ALL
       SELECT player2_name as name,
              CASE WHEN winner_name = player2_name THEN 1 ELSE 0 END as win,
              CASE WHEN winner_name IS NOT NULL AND winner_name != player2_name THEN 1 ELSE 0 END as loss,
              CASE WHEN winner_name IS NULL THEN 1 ELSE 0 END as draw
-      FROM battles
+      FROM battles ${gameTypeFilter}
     )
     SELECT name,
            SUM(win) as wins,
@@ -113,19 +127,21 @@ function getLeaderboard(limit = 10) {
   return db.prepare(query).all(limit);
 }
 
-// Get faction stats
-function getFactionStats(limit = 10) {
+// Get faction stats (filtered by game type)
+function getFactionStats(limit = 10, gameType = null) {
+  const gameTypeFilter = gameType ? `WHERE game_type = '${gameType}'` : '';
+  
   const query = `
     WITH faction_stats AS (
       SELECT player1_faction as faction,
              CASE WHEN winner_name = player1_name THEN 1 ELSE 0 END as win,
              1 as game
-      FROM battles
+      FROM battles ${gameTypeFilter}
       UNION ALL
       SELECT player2_faction as faction,
              CASE WHEN winner_name = player2_name THEN 1 ELSE 0 END as win,
              1 as game
-      FROM battles
+      FROM battles ${gameTypeFilter}
     )
     SELECT faction,
            SUM(win) as wins,
@@ -141,20 +157,27 @@ function getFactionStats(limit = 10) {
   return db.prepare(query).all(limit);
 }
 
-// Get head-to-head record
-function getHeadToHead(player1, player2) {
-  const query = `
+// Get head-to-head record (filtered by game type)
+function getHeadToHead(player1, player2, gameType = null) {
+  let query = `
     SELECT 
       SUM(CASE WHEN winner_name = ? THEN 1 ELSE 0 END) as player1_wins,
       SUM(CASE WHEN winner_name = ? THEN 1 ELSE 0 END) as player2_wins,
       SUM(CASE WHEN winner_name IS NULL THEN 1 ELSE 0 END) as draws,
       COUNT(*) as total_games
     FROM battles
-    WHERE (player1_name = ? AND player2_name = ?)
-       OR (player1_name = ? AND player2_name = ?)
+    WHERE ((player1_name = ? AND player2_name = ?)
+       OR (player1_name = ? AND player2_name = ?))
   `;
   
-  return db.prepare(query).get(player1, player2, player1, player2, player2, player1);
+  const params = [player1, player2, player1, player2, player2, player1];
+  
+  if (gameType) {
+    query += ` AND game_type = ?`;
+    params.push(gameType);
+  }
+
+  return db.prepare(query).get(...params);
 }
 
 module.exports = {

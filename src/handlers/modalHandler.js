@@ -9,7 +9,7 @@ const {
   AttachmentBuilder,
   EmbedBuilder,
 } = require('discord.js');
-const { getFactionsByGameType, getFactionByValue, getGrandAlliances } = require('../data/factions');
+const { getFactionsByGameType, getFactionByValue, getGrandAlliances, getAosPoints } = require('../data/factions');
 const { generateBattleReportImage } = require('../generators/imageGenerator');
 const { generateNarrative } = require('../generators/narrativeGenerator');
 const { saveBattle } = require('../database/stats');
@@ -54,12 +54,36 @@ async function handleSelectMenu(interaction, sessions) {
   try {
     if (customId === 'select_gametype') {
       session.gameType = value;
+      
+      // For AoS, ask for points size first
+      if (value === 'aos') {
+        session.step = 'aosPoints';
+        const pointsOptions = getAosPoints();
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_aos_points')
+          .setPlaceholder('Select battle size')
+          .addOptions(pointsOptions.map(p => ({ label: p.label, value: p.value, emoji: p.emoji })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        
+        await interaction.update({
+          content: '🛡️ **Age of Sigmar Battle Report**\n\nStep 2: Select **Battle Size**:',
+          components: [row],
+        });
+      } else {
+        // Spearhead - go straight to faction selection
+        session.step = 'player1Faction';
+        const rows = createFactionSelectMenus('select_p1_faction', session.gameType);
+        await interaction.update({
+          content: '⚔️ **Battle Report Submission**\n\nStep 2/5: Select **Player 1** faction:',
+          components: rows,
+        });
+      }
+    } else if (customId === 'select_aos_points') {
+      session.pointsSize = value;
       session.step = 'player1Faction';
-
       const rows = createFactionSelectMenus('select_p1_faction', session.gameType);
-
       await interaction.update({
-        content: '⚔️ **Battle Report Submission**\n\nStep 2/5: Select **Player 1** faction:',
+        content: `🛡️ **Age of Sigmar Battle Report** (${value} pts)\n\nStep 3: Select **Player 1** faction:`,
         components: rows,
       });
     } else if (customId.startsWith('select_p1_faction_')) {
@@ -72,8 +96,8 @@ async function handleSelectMenu(interaction, sessions) {
       session.player1.factionLabel = faction.label;
       session.player1.factionEmoji = faction.emoji;
 
-      // If faction has multiple spearheads, let them choose
-      if (faction.spearheads && faction.spearheads.length > 1) {
+      // If Spearhead and faction has multiple spearheads, let them choose
+      if (session.gameType === 'spearhead' && faction.spearheads && faction.spearheads.length > 1) {
         session.step = 'player1Spearhead';
         const menu = new StringSelectMenuBuilder()
           .setCustomId('select_p1_spearhead')
@@ -85,12 +109,13 @@ async function handleSelectMenu(interaction, sessions) {
           components: [row],
         });
       } else {
-        // Single spearhead, auto-select and move on
-        session.player1.spearhead = faction.spearheads ? faction.spearheads[0] : null;
+        // Single spearhead or AoS, auto-select and move on
+        session.player1.spearhead = (session.gameType === 'spearhead' && faction.spearheads) ? faction.spearheads[0] : null;
         session.step = 'player2Faction';
         const rows = createFactionSelectMenus('select_p2_faction', session.gameType);
+        const prefix = session.gameType === 'aos' ? `🛡️ **Age of Sigmar** (${session.pointsSize} pts)` : '⚔️ **Battle Report Submission**';
         await interaction.update({
-          content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${faction.emoji} ${faction.label}${session.player1.spearhead ? ` (${session.player1.spearhead})` : ''}\n\nStep 3/6: Select **Player 2** faction:`,
+          content: `${prefix}\n\n✅ Player 1: ${faction.emoji} ${faction.label}${session.player1.spearhead ? ` (${session.player1.spearhead})` : ''}\n\nSelect **Player 2** faction:`,
           components: rows,
         });
       }
@@ -99,7 +124,7 @@ async function handleSelectMenu(interaction, sessions) {
       session.step = 'player2Faction';
       const rows = createFactionSelectMenus('select_p2_faction', session.gameType);
       await interaction.update({
-        content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${session.player1.factionEmoji} ${session.player1.factionLabel} (${value})\n\nStep 3/6: Select **Player 2** faction:`,
+        content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${session.player1.factionEmoji} ${session.player1.factionLabel} (${value})\n\nSelect **Player 2** faction:`,
         components: rows,
       });
     } else if (customId.startsWith('select_p2_faction_')) {
@@ -112,8 +137,8 @@ async function handleSelectMenu(interaction, sessions) {
       session.player2.factionLabel = faction.label;
       session.player2.factionEmoji = faction.emoji;
 
-      // If faction has multiple spearheads, let them choose
-      if (faction.spearheads && faction.spearheads.length > 1) {
+      // If Spearhead and faction has multiple spearheads, let them choose
+      if (session.gameType === 'spearhead' && faction.spearheads && faction.spearheads.length > 1) {
         session.step = 'player2Spearhead';
         const menu = new StringSelectMenuBuilder()
           .setCustomId('select_p2_spearhead')
@@ -125,8 +150,8 @@ async function handleSelectMenu(interaction, sessions) {
           components: [row],
         });
       } else {
-        // Single spearhead, auto-select and show modal
-        session.player2.spearhead = faction.spearheads ? faction.spearheads[0] : null;
+        // Single spearhead or AoS, auto-select and show modal
+        session.player2.spearhead = (session.gameType === 'spearhead' && faction.spearheads) ? faction.spearheads[0] : null;
         session.step = 'details';
         await showDetailsModal(interaction, session);
       }
@@ -143,9 +168,11 @@ async function handleSelectMenu(interaction, sessions) {
 
 // Helper function to show the details modal
 async function showDetailsModal(interaction, session) {
+  const isAoS = session.gameType === 'aos';
+  
   const modal = new ModalBuilder()
     .setCustomId('modal_details')
-    .setTitle('Battle Details');
+    .setTitle(isAoS ? 'Age of Sigmar Battle Details' : 'Battle Details');
 
   const dateInput = new TextInputBuilder()
     .setCustomId('date')
@@ -212,31 +239,83 @@ async function handleModal(interaction, sessions) {
     session.player1.vp = interaction.fields.getTextInputValue('p1_vp');
     session.player2.name = interaction.fields.getTextInputValue('p2_name');
     session.player2.vp = interaction.fields.getTextInputValue('p2_vp');
+    
+    // For AoS, ask for battleplan next
+    if (session.gameType === 'aos') {
+      session.step = 'battleplan';
+      
+      const addBattleplanBtn = new ButtonBuilder()
+        .setCustomId('btn_add_battleplan')
+        .setLabel('Add Battleplan')
+        .setStyle(ButtonStyle.Secondary)
+        .setEmoji('🗺️');
+
+      const skipBtn = new ButtonBuilder()
+        .setCustomId('btn_skip_battleplan')
+        .setLabel('Skip')
+        .setStyle(ButtonStyle.Primary);
+
+      const row = new ActionRowBuilder().addComponents(addBattleplanBtn, skipBtn);
+
+      await interaction.reply({
+        content: `🛡️ **Age of Sigmar Battle Report** (${session.pointsSize} pts)\n\n✅ ${session.player1.factionEmoji} **${session.player1.name}** (${session.player1.factionLabel}): ${session.player1.vp} VP\n✅ ${session.player2.factionEmoji} **${session.player2.name}** (${session.player2.factionLabel}): ${session.player2.vp} VP\n✅ Date: ${session.date}\n\nWould you like to add the Battleplan name?`,
+        components: [row],
+        ephemeral: true,
+      });
+    } else {
+      // Spearhead - go straight to notes
+      session.step = 'notes';
+      await showNotesPrompt(interaction, session);
+    }
+  } else if (interaction.customId === 'modal_battleplan') {
+    session.battleplan = interaction.fields.getTextInputValue('battleplan');
     session.step = 'notes';
-
-    // Show notes options
-    const addNotesBtn = new ButtonBuilder()
-      .setCustomId('btn_add_notes')
-      .setLabel('Add Battle Notes')
-      .setStyle(ButtonStyle.Secondary)
-      .setEmoji('📝');
-
-    const skipBtn = new ButtonBuilder()
-      .setCustomId('btn_skip_notes')
-      .setLabel('Generate Report')
-      .setStyle(ButtonStyle.Primary)
-      .setEmoji('⚔️');
-
-    const row = new ActionRowBuilder().addComponents(addNotesBtn, skipBtn);
-
-    await interaction.reply({
-      content: `⚔️ **Battle Report Submission**\n\n✅ ${session.player1.factionEmoji} **${session.player1.name}** (${session.player1.factionLabel}): ${session.player1.vp} VP\n✅ ${session.player2.factionEmoji} **${session.player2.name}** (${session.player2.factionLabel}): ${session.player2.vp} VP\n✅ Date: ${session.date}\n\nWould you like to add battle notes for the AI narrative? (e.g., "close game", "Morathi dominated")`,
-      components: [row],
-      ephemeral: true,
-    });
+    await showNotesPrompt(interaction, session, true);
   } else if (interaction.customId === 'modal_notes') {
     session.notes = interaction.fields.getTextInputValue('notes');
     await generateAndPostReport(interaction, session, sessions);
+  }
+}
+
+async function showNotesPrompt(interaction, session, isFollowUp = false) {
+  const addNotesBtn = new ButtonBuilder()
+    .setCustomId('btn_add_notes')
+    .setLabel('Add Battle Notes')
+    .setStyle(ButtonStyle.Secondary)
+    .setEmoji('📝');
+
+  const skipBtn = new ButtonBuilder()
+    .setCustomId('btn_skip_notes')
+    .setLabel('Generate Report')
+    .setStyle(ButtonStyle.Primary)
+    .setEmoji('⚔️');
+
+  const row = new ActionRowBuilder().addComponents(addNotesBtn, skipBtn);
+
+  const prefix = session.gameType === 'aos' 
+    ? `🛡️ **Age of Sigmar Battle Report** (${session.pointsSize} pts)`
+    : '⚔️ **Battle Report Submission**';
+  
+  let content = `${prefix}\n\n✅ ${session.player1.factionEmoji} **${session.player1.name}** (${session.player1.factionLabel}): ${session.player1.vp} VP\n✅ ${session.player2.factionEmoji} **${session.player2.name}** (${session.player2.factionLabel}): ${session.player2.vp} VP\n✅ Date: ${session.date}`;
+  
+  if (session.battleplan) {
+    content += `\n✅ Battleplan: ${session.battleplan}`;
+  }
+  
+  content += `\n\nWould you like to add battle notes for the AI narrative?`;
+
+  if (isFollowUp) {
+    await interaction.reply({
+      content,
+      components: [row],
+      ephemeral: true,
+    });
+  } else {
+    await interaction.reply({
+      content,
+      components: [row],
+      ephemeral: true,
+    });
   }
 }
 
@@ -249,7 +328,26 @@ async function handleButton(interaction, sessions) {
     });
   }
 
-  if (interaction.customId === 'btn_add_notes') {
+  if (interaction.customId === 'btn_add_battleplan') {
+    const modal = new ModalBuilder()
+      .setCustomId('modal_battleplan')
+      .setTitle('Battleplan');
+
+    const battleplanInput = new TextInputBuilder()
+      .setCustomId('battleplan')
+      .setLabel('Battleplan Name')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('e.g., "The Jaws of Gallet", "Turf War"')
+      .setRequired(true)
+      .setMaxLength(100);
+
+    modal.addComponents(new ActionRowBuilder().addComponents(battleplanInput));
+
+    await interaction.showModal(modal);
+  } else if (interaction.customId === 'btn_skip_battleplan') {
+    session.step = 'notes';
+    await showNotesPrompt(interaction, session);
+  } else if (interaction.customId === 'btn_add_notes') {
     const modal = new ModalBuilder()
       .setCustomId('modal_notes')
       .setTitle('Battle Notes');
