@@ -42,8 +42,8 @@ module.exports = {
       photos,
       channelId: interaction.channelId,
       gameType: null,
-      player1: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '' },
-      player2: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '' },
+      player1: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
+      player2: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
       date: '',
       breakdown: null,
     });

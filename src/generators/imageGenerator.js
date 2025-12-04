@@ -263,20 +263,28 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
   const displayName = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
   ctx.fillText(displayName, x, y);
 
-  // Faction (without emoji - fonts don't support them well)
+  // Faction
   ctx.font = 'italic 16px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
-  ctx.fillText(player.factionLabel, x, y + 30);
+  ctx.fillText(player.factionLabel, x, y + 25);
+
+  // Spearhead name (if available)
+  if (player.spearhead) {
+    ctx.font = '12px ' + FONT_FAMILY;
+    ctx.fillStyle = COLORS.accentRed;
+    ctx.fillText(player.spearhead, x, y + 45);
+  }
 
   // Large VP number
+  const vpY = player.spearhead ? y + 115 : y + 100;
   ctx.font = 'bold 72px ' + FONT_FAMILY;
   ctx.fillStyle = isWinner ? COLORS.accentRed : COLORS.textDark;
-  ctx.fillText(player.vp, x, y + 110);
+  ctx.fillText(player.vp, x, vpY);
 
   // VP label
   ctx.font = '14px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
-  ctx.fillText('Victory Points', x, y + 150);
+  ctx.fillText('Victory Points', x, vpY + 40);
 
   // Winner indicator
   if (isWinner) {

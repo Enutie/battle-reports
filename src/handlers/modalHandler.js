@@ -70,12 +70,35 @@ async function handleSelectMenu(interaction, sessions) {
       session.player1.faction = value;
       session.player1.factionLabel = faction.label;
       session.player1.factionEmoji = faction.emoji;
+
+      // If faction has multiple spearheads, let them choose
+      if (faction.spearheads && faction.spearheads.length > 1) {
+        session.step = 'player1Spearhead';
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_p1_spearhead')
+          .setPlaceholder('Select Spearhead')
+          .addOptions(faction.spearheads.map(s => ({ label: s, value: s })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        await interaction.update({
+          content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${faction.emoji} ${faction.label}\n\nSelect **Player 1** Spearhead:`,
+          components: [row],
+        });
+      } else {
+        // Single spearhead, auto-select and move on
+        session.player1.spearhead = faction.spearheads ? faction.spearheads[0] : null;
+        session.step = 'player2Faction';
+        const rows = createFactionSelectMenus('select_p2_faction', session.gameType);
+        await interaction.update({
+          content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${faction.emoji} ${faction.label}${session.player1.spearhead ? ` (${session.player1.spearhead})` : ''}\n\nStep 3/6: Select **Player 2** faction:`,
+          components: rows,
+        });
+      }
+    } else if (customId === 'select_p1_spearhead') {
+      session.player1.spearhead = value;
       session.step = 'player2Faction';
-
       const rows = createFactionSelectMenus('select_p2_faction', session.gameType);
-
       await interaction.update({
-        content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${faction.emoji} ${faction.label}\n\nStep 3/5: Select **Player 2** faction:`,
+        content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${session.player1.factionEmoji} ${session.player1.factionLabel} (${value})\n\nStep 3/6: Select **Player 2** faction:`,
         components: rows,
       });
     } else if (customId.startsWith('select_p2_faction_')) {
@@ -87,66 +110,90 @@ async function handleSelectMenu(interaction, sessions) {
       session.player2.faction = value;
       session.player2.factionLabel = faction.label;
       session.player2.factionEmoji = faction.emoji;
+
+      // If faction has multiple spearheads, let them choose
+      if (faction.spearheads && faction.spearheads.length > 1) {
+        session.step = 'player2Spearhead';
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_p2_spearhead')
+          .setPlaceholder('Select Spearhead')
+          .addOptions(faction.spearheads.map(s => ({ label: s, value: s })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        await interaction.update({
+          content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${session.player1.factionEmoji} ${session.player1.factionLabel}${session.player1.spearhead ? ` (${session.player1.spearhead})` : ''}\n✅ Player 2: ${faction.emoji} ${faction.label}\n\nSelect **Player 2** Spearhead:`,
+          components: [row],
+        });
+      } else {
+        // Single spearhead, auto-select and show modal
+        session.player2.spearhead = faction.spearheads ? faction.spearheads[0] : null;
+        session.step = 'details';
+        await showDetailsModal(interaction, session);
+      }
+    } else if (customId === 'select_p2_spearhead') {
+      session.player2.spearhead = value;
       session.step = 'details';
-
-    // Show modal for player details
-    const modal = new ModalBuilder()
-      .setCustomId('modal_details')
-      .setTitle('Battle Details');
-
-    const dateInput = new TextInputBuilder()
-      .setCustomId('date')
-      .setLabel('Battle Date')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g., December 4, 2025')
-      .setRequired(true);
-
-    const p1NameInput = new TextInputBuilder()
-      .setCustomId('p1_name')
-      .setLabel('Player 1 Name')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Enter Player 1 name')
-      .setRequired(true)
-      .setMaxLength(30);
-
-    const p1VPInput = new TextInputBuilder()
-      .setCustomId('p1_vp')
-      .setLabel('Player 1 Victory Points')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g., 24')
-      .setRequired(true)
-      .setMaxLength(3);
-
-    const p2NameInput = new TextInputBuilder()
-      .setCustomId('p2_name')
-      .setLabel('Player 2 Name')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Enter Player 2 name')
-      .setRequired(true)
-      .setMaxLength(30);
-
-    const p2VPInput = new TextInputBuilder()
-      .setCustomId('p2_vp')
-      .setLabel('Player 2 Victory Points')
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder('e.g., 18')
-      .setRequired(true)
-      .setMaxLength(3);
-
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(dateInput),
-      new ActionRowBuilder().addComponents(p1NameInput),
-      new ActionRowBuilder().addComponents(p1VPInput),
-      new ActionRowBuilder().addComponents(p2NameInput),
-      new ActionRowBuilder().addComponents(p2VPInput)
-    );
-
-    await interaction.showModal(modal);
+      await showDetailsModal(interaction, session);
     }
   } catch (error) {
     console.error('Error in handleSelectMenu:', error);
     throw error;
   }
+}
+
+// Helper function to show the details modal
+async function showDetailsModal(interaction, session) {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_details')
+    .setTitle('Battle Details');
+
+  const dateInput = new TextInputBuilder()
+    .setCustomId('date')
+    .setLabel('Battle Date')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., December 4, 2025')
+    .setRequired(true);
+
+  const p1NameInput = new TextInputBuilder()
+    .setCustomId('p1_name')
+    .setLabel('Player 1 Name')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Enter Player 1 name')
+    .setRequired(true)
+    .setMaxLength(30);
+
+  const p1VPInput = new TextInputBuilder()
+    .setCustomId('p1_vp')
+    .setLabel('Player 1 Victory Points')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., 24')
+    .setRequired(true)
+    .setMaxLength(3);
+
+  const p2NameInput = new TextInputBuilder()
+    .setCustomId('p2_name')
+    .setLabel('Player 2 Name')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Enter Player 2 name')
+    .setRequired(true)
+    .setMaxLength(30);
+
+  const p2VPInput = new TextInputBuilder()
+    .setCustomId('p2_vp')
+    .setLabel('Player 2 Victory Points')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., 18')
+    .setRequired(true)
+    .setMaxLength(3);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(dateInput),
+    new ActionRowBuilder().addComponents(p1NameInput),
+    new ActionRowBuilder().addComponents(p1VPInput),
+    new ActionRowBuilder().addComponents(p2NameInput),
+    new ActionRowBuilder().addComponents(p2VPInput)
+  );
+
+  await interaction.showModal(modal);
 }
 
 async function handleModal(interaction, sessions) {
