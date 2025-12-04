@@ -22,3 +22,6 @@ Thumbs.db
 *.jpg
 !assets/**/*.png
 !assets/**/*.jpg
+
+# Database (keep on server, don't overwrite)
+data/

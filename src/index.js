@@ -8,6 +8,7 @@ const {
   Events,
 } = require('discord.js');
 const battlereportCommand = require('./commands/battlereport');
+const { statsCommand, factionStatsCommand, headToHeadCommand } = require('./commands/stats');
 const { handleSelectMenu, handleModal, handleButton } = require('./handlers/modalHandler');
 
 // Create Discord client
@@ -18,6 +19,9 @@ const client = new Client({
 // Store commands
 client.commands = new Collection();
 client.commands.set(battlereportCommand.data.name, battlereportCommand);
+client.commands.set(statsCommand.data.name, statsCommand);
+client.commands.set(factionStatsCommand.data.name, factionStatsCommand);
+client.commands.set(headToHeadCommand.data.name, headToHeadCommand);
 
 // Session storage for ongoing battle reports (keyed by user ID)
 const sessions = new Map();
@@ -29,7 +33,12 @@ async function registerCommands() {
   try {
     console.log('🔄 Registering slash commands...');
 
-    const commands = [battlereportCommand.data.toJSON()];
+    const commands = [
+      battlereportCommand.data.toJSON(),
+      statsCommand.data.toJSON(),
+      factionStatsCommand.data.toJSON(),
+      headToHeadCommand.data.toJSON(),
+    ];
 
     if (process.env.GUILD_ID) {
       // Register to specific guild (faster for development)

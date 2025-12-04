@@ -12,6 +12,7 @@ const {
 const { getFactionsByGameType, getFactionByValue, getGrandAlliances } = require('../data/factions');
 const { generateBattleReportImage } = require('../generators/imageGenerator');
 const { generateNarrative } = require('../generators/narrativeGenerator');
+const { saveBattle } = require('../database/stats');
 
 // Helper to create 4 select menus by Grand Alliance
 function createFactionSelectMenus(baseId, gameType) {
@@ -354,6 +355,14 @@ async function generateAndPostReport(interaction, session, sessions) {
     }
 
     await channel.send(messageOptions);
+
+    // Save battle to database
+    try {
+      const battleId = saveBattle(session);
+      console.log('Battle saved to database with ID:', battleId);
+    } catch (dbError) {
+      console.error('Failed to save battle to database:', dbError);
+    }
 
     // Update the ephemeral message
     await interaction.editReply({
