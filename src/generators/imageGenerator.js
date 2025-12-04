@@ -46,7 +46,7 @@ function generateBattleReportImage(reportData) {
   drawDate(ctx, width, reportData.date);
 
   // Draw decorative divider
-  drawDivider(ctx, width, 140);
+  drawDivider(ctx, width, 150);
 
   // Draw player sections
   drawPlayerSections(ctx, width, height, reportData);
@@ -241,8 +241,8 @@ function drawPlayerSections(ctx, width, height, reportData) {
   const p1Wins = p1VP > p2VP;
   const p2Wins = p2VP > p1VP;
 
-  // Player 1 section (left)
-  drawPlayerSection(ctx, 100, 180, player1, p1Wins);
+  // Player 1 section (left) - moved inward
+  drawPlayerSection(ctx, 200, 180, player1, p1Wins);
 
   // VS text
   ctx.fillStyle = COLORS.accentRed;
@@ -250,8 +250,8 @@ function drawPlayerSections(ctx, width, height, reportData) {
   ctx.textAlign = 'center';
   ctx.fillText('VS', width / 2, 260);
 
-  // Player 2 section (right)
-  drawPlayerSection(ctx, width - 100, 180, player2, p2Wins);
+  // Player 2 section (right) - moved inward
+  drawPlayerSection(ctx, width - 200, 180, player2, p2Wins);
 }
 
 function drawPlayerSection(ctx, x, y, player, isWinner) {
@@ -276,7 +276,7 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
   // VP label
   ctx.font = '14px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
-  ctx.fillText('Victory Points', x, y + 135);
+  ctx.fillText('Victory Points', x, y + 150);
 
   // Winner indicator
   if (isWinner) {
@@ -324,7 +324,7 @@ function drawResultBanner(ctx, width, height, reportData) {
   ctx.fillStyle = COLORS.textLight;
   ctx.font = 'bold 20px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
-  ctx.fillText(resultText, width / 2, bannerY + bannerHeight / 2 + 7);
+  ctx.fillText(resultText, width / 2, bannerY + bannerHeight / 2 );
 }
 
 function drawBreakdown(ctx, width, height, breakdown) {

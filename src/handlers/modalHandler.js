@@ -11,6 +11,7 @@ const {
 } = require('discord.js');
 const { getFactionsByGameType, getFactionByValue } = require('../data/factions');
 const { generateBattleReportImage } = require('../generators/imageGenerator');
+const { generateNarrative } = require('../generators/narrativeGenerator');
 
 // Helper to split factions into two select menus (Discord max 25 options per menu)
 function createFactionSelectMenus(baseId, gameType) {
@@ -232,10 +233,15 @@ async function generateAndPostReport(interaction, session, sessions) {
   });
 
   try {
-    console.log('Generating image...');
-    // Generate the image
-    const imageBuffer = generateBattleReportImage(session);
+    // Generate narrative in parallel with image
+    console.log('Generating narrative and image...');
+    const [narrative, imageBuffer] = await Promise.all([
+      generateNarrative(session),
+      Promise.resolve(generateBattleReportImage(session)),
+    ]);
     console.log('Image generated, size:', imageBuffer.length);
+    console.log('Narrative:', narrative ? 'Generated' : 'Failed');
+    
     const attachment = new AttachmentBuilder(imageBuffer, { name: 'battle-report.png' });
 
     // Determine winner
@@ -250,13 +256,21 @@ async function generateAndPostReport(interaction, session, sessions) {
       resultText = `⚔️ An honorable draw!`;
     }
 
+    // Build description with optional narrative
+    let description = `**${session.player1.factionEmoji} ${session.player1.name}** (${session.player1.factionLabel}) vs **${session.player2.factionEmoji} ${session.player2.name}** (${session.player2.factionLabel})\n\n`;
+    
+    if (narrative) {
+      description += `*${narrative}*\n\n`;
+    }
+    
+    description += `📅 ${session.date}\n`;
+
     // Create embed
     const embed = new EmbedBuilder()
       .setColor(0x8b0000)
       .setTitle('⚔️ Battle Report')
       .setDescription(
-        `**${session.player1.factionEmoji} ${session.player1.name}** (${session.player1.factionLabel}) vs **${session.player2.factionEmoji} ${session.player2.name}** (${session.player2.factionLabel})\n\n` +
-        `📅 ${session.date}\n` +
+        description +
         `🎮 ${session.gameType.charAt(0).toUpperCase() + session.gameType.slice(1)}\n\n` +
         `**Score:** ${session.player1.vp} - ${session.player2.vp}\n\n` +
         resultText
