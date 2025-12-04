@@ -17,7 +17,6 @@
   "license": "MIT",
   "dependencies": {
     "@napi-rs/canvas": "^0.1.65",
-    "@napi-rs/canvas-win32-x64-msvc": "^0.1.83",
     "discord.js": "^14.14.1",
     "dotenv": "^16.3.1"
   }
