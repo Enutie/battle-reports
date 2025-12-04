@@ -42,10 +42,17 @@ module.exports = {
       photos,
       channelId: interaction.channelId,
       gameType: null,
-      pointsSize: null,      // For AoS
-      battleplan: null,      // For AoS
-      player1: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
-      player2: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
+      pointsSize: null,           // For AoS
+      battleplan: null,           // For AoS
+      underworldsFormat: null,    // For Underworlds
+      player1: { 
+        name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '',
+        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: ''
+      },
+      player2: { 
+        name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '',
+        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: ''
+      },
       date: '',
       notes: null,
     });

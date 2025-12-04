@@ -5,6 +5,7 @@ const GAME_TYPE_CHOICES = [
   { name: 'All Games', value: 'all' },
   { name: 'Spearhead', value: 'spearhead' },
   { name: 'Age of Sigmar', value: 'aos' },
+  { name: 'Underworlds', value: 'underworlds' },
 ];
 
 const statsCommand = {
@@ -29,7 +30,8 @@ const statsCommand = {
     const playerName = interaction.options.getString('player');
     const gameTypeOption = interaction.options.getString('game') || 'all';
     const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
-    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
+    const gameLabels = { all: 'All Games', spearhead: 'Spearhead', aos: 'Age of Sigmar', underworlds: 'Underworlds' };
+    const gameLabel = gameLabels[gameTypeOption] || gameTypeOption;
 
     if (playerName) {
       // Show individual player stats
@@ -106,7 +108,8 @@ const factionStatsCommand = {
   async execute(interaction) {
     const gameTypeOption = interaction.options.getString('game') || 'all';
     const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
-    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
+    const gameLabels2 = { all: 'All Games', spearhead: 'Spearhead', aos: 'Age of Sigmar', underworlds: 'Underworlds' };
+    const gameLabel = gameLabels2[gameTypeOption] || gameTypeOption;
     
     const factions = getFactionStats(15, gameType);
     
@@ -163,7 +166,8 @@ const headToHeadCommand = {
     const player2 = interaction.options.getString('player2');
     const gameTypeOption = interaction.options.getString('game') || 'all';
     const gameType = gameTypeOption === 'all' ? null : gameTypeOption;
-    const gameLabel = gameTypeOption === 'all' ? 'All Games' : (gameTypeOption === 'spearhead' ? 'Spearhead' : 'Age of Sigmar');
+    const gameLabels2 = { all: 'All Games', spearhead: 'Spearhead', aos: 'Age of Sigmar', underworlds: 'Underworlds' };
+    const gameLabel = gameLabels2[gameTypeOption] || gameTypeOption;
 
     const h2h = getHeadToHead(player1, player2, gameType);
     
@@ -191,3 +195,4 @@ const headToHeadCommand = {
 };
 
 module.exports = { statsCommand, factionStatsCommand, headToHeadCommand };
+

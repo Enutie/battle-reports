@@ -9,7 +9,7 @@ const {
   AttachmentBuilder,
   EmbedBuilder,
 } = require('discord.js');
-const { getFactionsByGameType, getFactionByValue, getGrandAlliances, getAosPoints } = require('../data/factions');
+const { getFactionsByGameType, getFactionByValue, getGrandAlliances, getAosPoints, getUnderworldsFormats, getUnderworldsWarbands, getUnderworldsDecks, getWarbandByValue } = require('../data/factions');
 const { generateBattleReportImage } = require('../generators/imageGenerator');
 const { generateNarrative } = require('../generators/narrativeGenerator');
 const { saveBattle } = require('../database/stats');
@@ -27,6 +27,26 @@ function createFactionSelectMenus(baseId, gameType) {
           label: f.label, 
           value: f.value, 
           emoji: f.emoji 
+        }))
+      );
+    return new ActionRowBuilder().addComponents(menu);
+  });
+
+  return rows;
+}
+
+// Helper to create 4 select menus for Underworlds warbands by Grand Alliance
+function createWarbandSelectMenus(baseId) {
+  const alliances = getUnderworldsWarbands();
+  
+  const rows = Object.entries(alliances).map(([key, alliance]) => {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`${baseId}_${key}`)
+      .setPlaceholder(`${alliance.emoji} ${alliance.label}`)
+      .addOptions(
+        alliance.warbands.map(w => ({ 
+          label: w.label, 
+          value: w.value,
         }))
       );
     return new ActionRowBuilder().addComponents(menu);
@@ -69,6 +89,20 @@ async function handleSelectMenu(interaction, sessions) {
           content: '🛡️ **Age of Sigmar Battle Report**\n\nStep 2: Select **Battle Size**:',
           components: [row],
         });
+      } else if (value === 'underworlds') {
+        // Underworlds - ask for format first
+        session.step = 'underworldsFormat';
+        const formatOptions = getUnderworldsFormats();
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_uw_format')
+          .setPlaceholder('Select format')
+          .addOptions(formatOptions.map(f => ({ label: f.label, value: f.value, emoji: f.emoji })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        
+        await interaction.update({
+          content: '🏰 **Underworlds Battle Report**\n\nStep 2: Select **Format**:',
+          components: [row],
+        });
       } else {
         // Spearhead - go straight to faction selection
         session.step = 'player1Faction';
@@ -86,6 +120,84 @@ async function handleSelectMenu(interaction, sessions) {
         content: `🛡️ **Age of Sigmar Battle Report** (${value} pts)\n\nStep 3: Select **Player 1** faction:`,
         components: rows,
       });
+    } else if (customId === 'select_uw_format') {
+      // Underworlds format selected
+      session.underworldsFormat = value;
+      session.step = 'player1Warband';
+      const rows = createWarbandSelectMenus('select_p1_warband');
+      await interaction.update({
+        content: `🏰 **Underworlds Battle Report** (${value.charAt(0).toUpperCase() + value.slice(1)})\n\nStep 3: Select **Player 1** warband:`,
+        components: rows,
+      });
+    } else if (customId.startsWith('select_p1_warband_')) {
+      // Player 1 warband selected
+      const warband = getWarbandByValue(value);
+      if (!warband) {
+        return interaction.reply({ content: '❌ Warband not found. Please try again.', flags: 64 });
+      }
+      session.player1.warband = value;
+      session.player1.warbandLabel = warband.label;
+      session.player1.alliance = warband.alliance;
+      session.player1.allianceEmoji = warband.allianceEmoji;
+      
+      // Ask for deck
+      session.step = 'player1Deck';
+      const decks = getUnderworldsDecks();
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('select_p1_deck')
+        .setPlaceholder('Select Rivals deck')
+        .addOptions(decks.map(d => ({ label: d.label, value: d.value })));
+      const row = new ActionRowBuilder().addComponents(menu);
+      await interaction.update({
+        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${warband.allianceEmoji} ${warband.label}\n\nSelect **Player 1** Rivals deck:`,
+        components: [row],
+      });
+    } else if (customId === 'select_p1_deck') {
+      // Player 1 deck selected
+      const decks = getUnderworldsDecks();
+      const deck = decks.find(d => d.value === value);
+      session.player1.deck = value;
+      session.player1.deckLabel = deck ? deck.label : value;
+      
+      // Move to player 2 warband
+      session.step = 'player2Warband';
+      const rows = createWarbandSelectMenus('select_p2_warband');
+      await interaction.update({
+        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n\nSelect **Player 2** warband:`,
+        components: rows,
+      });
+    } else if (customId.startsWith('select_p2_warband_')) {
+      // Player 2 warband selected
+      const warband = getWarbandByValue(value);
+      if (!warband) {
+        return interaction.reply({ content: '❌ Warband not found. Please try again.', flags: 64 });
+      }
+      session.player2.warband = value;
+      session.player2.warbandLabel = warband.label;
+      session.player2.alliance = warband.alliance;
+      session.player2.allianceEmoji = warband.allianceEmoji;
+      
+      // Ask for deck
+      session.step = 'player2Deck';
+      const decks = getUnderworldsDecks();
+      const menu = new StringSelectMenuBuilder()
+        .setCustomId('select_p2_deck')
+        .setPlaceholder('Select Rivals deck')
+        .addOptions(decks.map(d => ({ label: d.label, value: d.value })));
+      const row = new ActionRowBuilder().addComponents(menu);
+      await interaction.update({
+        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n✅ Player 2: ${warband.allianceEmoji} ${warband.label}\n\nSelect **Player 2** Rivals deck:`,
+        components: [row],
+      });
+    } else if (customId === 'select_p2_deck') {
+      // Player 2 deck selected - show details modal
+      const decks = getUnderworldsDecks();
+      const deck = decks.find(d => d.value === value);
+      session.player2.deck = value;
+      session.player2.deckLabel = deck ? deck.label : value;
+      
+      session.step = 'details';
+      await showUnderworldsDetailsModal(interaction, session);
     } else if (customId.startsWith('select_p1_faction_')) {
       const faction = getFactionByValue(session.gameType, value);
       if (!faction) {
@@ -224,6 +336,62 @@ async function showDetailsModal(interaction, session) {
   await interaction.showModal(modal);
 }
 
+// Helper function to show Underworlds details modal (uses Glory Points)
+async function showUnderworldsDetailsModal(interaction, session) {
+  const modal = new ModalBuilder()
+    .setCustomId('modal_underworlds_details')
+    .setTitle('Underworlds Battle Details');
+
+  const dateInput = new TextInputBuilder()
+    .setCustomId('date')
+    .setLabel('Battle Date')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., December 4, 2025')
+    .setRequired(true);
+
+  const p1NameInput = new TextInputBuilder()
+    .setCustomId('p1_name')
+    .setLabel('Player 1 Name')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Enter Player 1 name')
+    .setRequired(true)
+    .setMaxLength(30);
+
+  const p1GloryInput = new TextInputBuilder()
+    .setCustomId('p1_glory')
+    .setLabel('Player 1 Glory Points')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., 14')
+    .setRequired(true)
+    .setMaxLength(3);
+
+  const p2NameInput = new TextInputBuilder()
+    .setCustomId('p2_name')
+    .setLabel('Player 2 Name')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('Enter Player 2 name')
+    .setRequired(true)
+    .setMaxLength(30);
+
+  const p2GloryInput = new TextInputBuilder()
+    .setCustomId('p2_glory')
+    .setLabel('Player 2 Glory Points')
+    .setStyle(TextInputStyle.Short)
+    .setPlaceholder('e.g., 11')
+    .setRequired(true)
+    .setMaxLength(3);
+
+  modal.addComponents(
+    new ActionRowBuilder().addComponents(dateInput),
+    new ActionRowBuilder().addComponents(p1NameInput),
+    new ActionRowBuilder().addComponents(p1GloryInput),
+    new ActionRowBuilder().addComponents(p2NameInput),
+    new ActionRowBuilder().addComponents(p2GloryInput)
+  );
+
+  await interaction.showModal(modal);
+}
+
 async function handleModal(interaction, sessions) {
   const session = sessions.get(interaction.user.id);
   if (!session) {
@@ -233,7 +401,18 @@ async function handleModal(interaction, sessions) {
     });
   }
 
-  if (interaction.customId === 'modal_details') {
+  if (interaction.customId === 'modal_underworlds_details') {
+    // Underworlds modal
+    session.date = interaction.fields.getTextInputValue('date');
+    session.player1.name = interaction.fields.getTextInputValue('p1_name');
+    session.player1.vp = interaction.fields.getTextInputValue('p1_glory'); // Glory = VP for stats
+    session.player2.name = interaction.fields.getTextInputValue('p2_name');
+    session.player2.vp = interaction.fields.getTextInputValue('p2_glory');
+    
+    // Go straight to notes for Underworlds
+    session.step = 'notes';
+    await showNotesPrompt(interaction, session);
+  } else if (interaction.customId === 'modal_details') {
     session.date = interaction.fields.getTextInputValue('date');
     session.player1.name = interaction.fields.getTextInputValue('p1_name');
     session.player1.vp = interaction.fields.getTextInputValue('p1_vp');

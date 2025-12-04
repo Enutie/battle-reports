@@ -3,6 +3,7 @@
 const GAME_TYPES = [
   { value: 'spearhead', label: 'Spearhead', emoji: '⚔️' },
   { value: 'aos', label: 'Age of Sigmar', emoji: '🛡️' },
+  { value: 'underworlds', label: 'Underworlds', emoji: '🏰' },
   // Future game types:
   // { value: '40k', label: 'Warhammer 40,000', emoji: '🔫' },
 ];
@@ -12,6 +13,86 @@ const AOS_POINTS = [
   { value: '1000', label: '1000 Points', emoji: '⚔️' },
   { value: '1500', label: '1500 Points', emoji: '⚔️' },
   { value: '2000', label: '2000 Points', emoji: '🏆' },
+];
+
+// Underworlds formats
+const UNDERWORLDS_FORMATS = [
+  { value: 'rivals', label: 'Rivals', emoji: '🎴' },
+  { value: 'nemesis', label: 'Nemesis', emoji: '⚔️' },
+  { value: 'championship', label: 'Championship', emoji: '🏆' },
+];
+
+// Underworlds Warbands organized by Grand Alliance
+const UNDERWORLDS_WARBANDS = {
+  order: {
+    label: 'Order',
+    emoji: '⚔️',
+    warbands: [
+      { value: 'emberwatch', label: 'The Emberwatch' },
+      { value: 'jaws_of_itzl', label: 'The Jaws of Itzl' },
+      { value: 'hexbanes_hunters', label: "Hexbane's Hunters" },
+      { value: 'myaris_purifiers', label: "Myari's Purifiers" },
+      { value: 'storm_of_celestus', label: 'Storm of Celestus' },
+      { value: 'farstriders', label: 'Farstriders' },
+      { value: 'steelhearts_champions', label: "Steelheart's Champions" },
+      { value: 'ylthari_guardians', label: "Ylthari's Guardians" },
+      { value: 'stormsires_cursebreakers', label: "Stormsire's Cursebreakers" },
+      { value: 'godsworn_hunt', label: 'Godsworn Hunt' },
+      { value: 'knives_of_crone', label: 'Knives of the Crone' },
+    ],
+  },
+  chaos: {
+    label: 'Chaos',
+    emoji: '🔥',
+    warbands: [
+      { value: 'zikkits_tunnelpack', label: "Zikkit's Tunnelpack" },
+      { value: 'grandfathers_gardeners', label: "Grandfather's Gardeners" },
+      { value: 'eyes_of_nine', label: 'Eyes of the Nine' },
+      { value: 'spiteclaws_swarm', label: "Spiteclaw's Swarm" },
+      { value: 'garreks_reavers', label: "Garrek's Reavers" },
+      { value: 'magores_fiends', label: "Magore's Fiends" },
+      { value: 'the_unmade', label: 'The Unmade' },
+      { value: 'the_dread_pageant', label: 'The Dread Pageant' },
+      { value: 'khagras_ravagers', label: "Khagra's Ravagers" },
+    ],
+  },
+  death: {
+    label: 'Death',
+    emoji: '💀',
+    warbands: [
+      { value: 'sepulchral_guard', label: 'The Sepulchral Guard' },
+      { value: 'thorns_of_briar_queen', label: 'Thorns of the Briar Queen' },
+      { value: 'the_exiled_dead', label: 'The Exiled Dead' },
+      { value: 'grymwatch', label: 'Grymwatch' },
+      { value: 'crimson_court', label: 'The Crimson Court' },
+      { value: 'mollogs_mob', label: "Mollog's Mob" },
+    ],
+  },
+  destruction: {
+    label: 'Destruction',
+    emoji: '💥',
+    warbands: [
+      { value: 'borgits_beastgrabbaz', label: "Borgit's Beastgrabbaz" },
+      { value: 'morgoks_krushas', label: "Morgok's Krushas" },
+      { value: 'ironskull_boyz', label: "Ironskull's Boyz" },
+      { value: 'hrothgorns_mantrappers', label: "Hrothgorn's Mantrappers" },
+      { value: 'zarbags_gitz', label: "Zarbag's Gitz" },
+      { value: 'rippas_snarlfangs', label: "Rippa's Snarlfangs" },
+    ],
+  },
+};
+
+// Underworlds Rivals Decks
+const UNDERWORLDS_DECKS = [
+  { value: 'countdown_to_cataclysm', label: 'Countdown to Cataclysm' },
+  { value: 'pillage_and_plunder', label: 'Pillage and Plunder' },
+  { value: 'blazing_assault', label: 'Blazing Assault' },
+  { value: 'emberstone_sentinels', label: 'Emberstone Sentinels' },
+  { value: 'force_of_frost', label: 'Force of Frost' },
+  { value: 'toxic_terrors', label: 'Toxic Terrors' },
+  { value: 'rimelocked_relics', label: 'Rimelocked Relics' },
+  { value: 'breakneck_slaughter', label: 'Breakneck Slaughter' },
+  { value: 'custom', label: 'Custom/Other' },
 ];
 
 // Factions organized by Grand Alliance with Spearhead names
@@ -94,6 +175,28 @@ function getAosPoints() {
   return AOS_POINTS;
 }
 
+function getUnderworldsFormats() {
+  return UNDERWORLDS_FORMATS;
+}
+
+function getUnderworldsWarbands() {
+  return UNDERWORLDS_WARBANDS;
+}
+
+function getUnderworldsDecks() {
+  return UNDERWORLDS_DECKS;
+}
+
+function getWarbandByValue(value) {
+  for (const alliance of Object.values(UNDERWORLDS_WARBANDS)) {
+    const warband = alliance.warbands.find(w => w.value === value);
+    if (warband) {
+      return { ...warband, alliance: alliance.label, allianceEmoji: alliance.emoji };
+    }
+  }
+  return null;
+}
+
 function getFactionByValue(gameType, value) {
   const factions = getFactionsByGameType(gameType);
   return factions.find(f => f.value === value);
@@ -104,8 +207,15 @@ module.exports = {
   SPEARHEAD_FACTIONS,
   GRAND_ALLIANCES,
   AOS_POINTS,
+  UNDERWORLDS_FORMATS,
+  UNDERWORLDS_WARBANDS,
+  UNDERWORLDS_DECKS,
   getFactionsByGameType,
   getGrandAlliances,
   getAosPoints,
+  getUnderworldsFormats,
+  getUnderworldsWarbands,
+  getUnderworldsDecks,
+  getWarbandByValue,
   getFactionByValue,
 };

@@ -175,6 +175,10 @@ function drawHeader(ctx, width, reportData) {
   let badgeText = gameType.toUpperCase();
   if (gameType === 'aos' && pointsSize) {
     badgeText = `AGE OF SIGMAR - ${pointsSize} PTS`;
+  } else if (gameType === 'underworlds') {
+    badgeText = reportData.underworldsFormat 
+      ? `UNDERWORLDS - ${reportData.underworldsFormat.toUpperCase()}`
+      : 'UNDERWORLDS';
   }
   const badgeWidth = ctx.measureText(badgeText).width + 30;
   const badgeX = width / 2 - badgeWidth / 2;
@@ -240,14 +244,15 @@ function drawDivider(ctx, width, y) {
 }
 
 function drawPlayerSections(ctx, width, height, reportData) {
-  const { player1, player2 } = reportData;
+  const { player1, player2, gameType } = reportData;
   const p1VP = parseInt(player1.vp) || 0;
   const p2VP = parseInt(player2.vp) || 0;
   const p1Wins = p1VP > p2VP;
   const p2Wins = p2VP > p1VP;
+  const isUnderworlds = gameType === 'underworlds';
 
   // Player 1 section (left) - moved inward
-  drawPlayerSection(ctx, 200, 180, player1, p1Wins);
+  drawPlayerSection(ctx, 200, 180, player1, p1Wins, isUnderworlds);
 
   // VS text
   ctx.fillStyle = COLORS.accentRed;
@@ -256,10 +261,10 @@ function drawPlayerSections(ctx, width, height, reportData) {
   ctx.fillText('VS', width / 2, 260);
 
   // Player 2 section (right) - moved inward
-  drawPlayerSection(ctx, width - 200, 180, player2, p2Wins);
+  drawPlayerSection(ctx, width - 200, 180, player2, p2Wins, isUnderworlds);
 }
 
-function drawPlayerSection(ctx, x, y, player, isWinner) {
+function drawPlayerSection(ctx, x, y, player, isWinner, isUnderworlds = false) {
   ctx.textAlign = 'center';
 
   // Player name
@@ -268,28 +273,38 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
   const displayName = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
   ctx.fillText(displayName, x, y);
 
-  // Faction
+  // Faction or Warband
   ctx.font = 'italic 16px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
-  ctx.fillText(player.factionLabel, x, y + 25);
-
-  // Spearhead name (if available)
-  if (player.spearhead) {
-    ctx.font = '12px ' + FONT_FAMILY;
-    ctx.fillStyle = COLORS.accentRed;
-    ctx.fillText(player.spearhead, x, y + 45);
+  if (isUnderworlds && player.warbandLabel) {
+    ctx.fillText(player.warbandLabel, x, y + 25);
+    // Deck name
+    if (player.deckLabel) {
+      ctx.font = '12px ' + FONT_FAMILY;
+      ctx.fillStyle = COLORS.accentRed;
+      ctx.fillText(player.deckLabel, x, y + 45);
+    }
+  } else {
+    ctx.fillText(player.factionLabel, x, y + 25);
+    // Spearhead name (if available)
+    if (player.spearhead) {
+      ctx.font = '12px ' + FONT_FAMILY;
+      ctx.fillStyle = COLORS.accentRed;
+      ctx.fillText(player.spearhead, x, y + 45);
+    }
   }
 
-  // Large VP number
-  const vpY = player.spearhead ? y + 115 : y + 100;
+  // Large VP/Glory number
+  const hasSubtext = (isUnderworlds && player.deckLabel) || player.spearhead;
+  const vpY = hasSubtext ? y + 115 : y + 100;
   ctx.font = 'bold 72px ' + FONT_FAMILY;
   ctx.fillStyle = isWinner ? COLORS.accentRed : COLORS.textDark;
   ctx.fillText(player.vp, x, vpY);
 
-  // VP label
+  // VP/Glory label
   ctx.font = '14px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
-  ctx.fillText('Victory Points', x, vpY + 40);
+  ctx.fillText(isUnderworlds ? 'Glory Points' : 'Victory Points', x, vpY + 40);
 
   // Winner indicator
   if (isWinner) {
