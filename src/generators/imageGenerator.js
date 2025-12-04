@@ -1,4 +1,12 @@
-const { createCanvas } = require('@napi-rs/canvas');
+const { createCanvas, GlobalFonts } = require('@napi-rs/canvas');
+const path = require('path');
+
+// Try to load system fonts on Linux
+try {
+  GlobalFonts.loadSystemFonts();
+} catch (e) {
+  console.log('Could not load system fonts:', e.message);
+}
 
 // Color palette
 const COLORS = {
@@ -12,6 +20,9 @@ const COLORS = {
   textLight: '#f4e4bc',
   gold: '#c9a227',
 };
+
+// Use DejaVu Sans which is commonly available on Linux
+const FONT_FAMILY = 'DejaVu Sans, Liberation Sans, Arial, sans-serif';
 
 function generateBattleReportImage(reportData) {
   const width = 800;
@@ -146,7 +157,7 @@ function drawCornerDecorations(ctx, width, height) {
 function drawHeader(ctx, width, gameType) {
   // "BATTLE REPORT" header
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'bold 42px serif';
+  ctx.font = 'bold 42px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
@@ -182,13 +193,13 @@ function drawHeader(ctx, width, gameType) {
 
   // Badge text
   ctx.fillStyle = COLORS.textLight;
-  ctx.font = 'bold 14px serif';
+  ctx.font = 'bold 14px ' + FONT_FAMILY;
   ctx.fillText(badgeText, width / 2, badgeY + 12);
 }
 
 function drawDate(ctx, width, date) {
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'italic 16px serif';
+  ctx.font = 'italic 16px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
   ctx.fillText(date, width / 2, 135);
 }
@@ -235,7 +246,7 @@ function drawPlayerSections(ctx, width, height, reportData) {
 
   // VS text
   ctx.fillStyle = COLORS.accentRed;
-  ctx.font = 'bold 36px serif';
+  ctx.font = 'bold 36px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
   ctx.fillText('VS', width / 2, 260);
 
@@ -248,29 +259,29 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
 
   // Player name
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'bold 22px serif';
+  ctx.font = 'bold 22px ' + FONT_FAMILY;
   const displayName = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
   ctx.fillText(displayName, x, y);
 
   // Faction (without emoji - fonts don't support them well)
-  ctx.font = 'italic 16px serif';
+  ctx.font = 'italic 16px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
   ctx.fillText(player.factionLabel, x, y + 30);
 
   // Large VP number
-  ctx.font = 'bold 72px serif';
+  ctx.font = 'bold 72px ' + FONT_FAMILY;
   ctx.fillStyle = isWinner ? COLORS.accentRed : COLORS.textDark;
   ctx.fillText(player.vp, x, y + 110);
 
   // VP label
-  ctx.font = '14px serif';
+  ctx.font = '14px ' + FONT_FAMILY;
   ctx.fillStyle = COLORS.borderDark;
   ctx.fillText('Victory Points', x, y + 135);
 
   // Winner indicator
   if (isWinner) {
     ctx.fillStyle = COLORS.gold;
-    ctx.font = 'bold 20px serif';
+    ctx.font = 'bold 20px ' + FONT_FAMILY;
     ctx.fillText('- WINNER -', x, y + 165);
   }
 }
@@ -311,14 +322,14 @@ function drawResultBanner(ctx, width, height, reportData) {
 
   // Result text
   ctx.fillStyle = COLORS.textLight;
-  ctx.font = 'bold 20px serif';
+  ctx.font = 'bold 20px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
   ctx.fillText(resultText, width / 2, bannerY + bannerHeight / 2 + 7);
 }
 
 function drawBreakdown(ctx, width, height, breakdown) {
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'italic 14px serif';
+  ctx.font = 'italic 14px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
 
   // Split breakdown into lines if too long
@@ -351,7 +362,7 @@ function drawFooter(ctx, width, height) {
 
   // Footer text
   ctx.fillStyle = COLORS.borderDark;
-  ctx.font = 'italic 14px serif';
+  ctx.font = 'italic 14px ' + FONT_FAMILY;
   ctx.textAlign = 'center';
   ctx.fillText('May your dice roll true', width / 2, height - 35);
 }
