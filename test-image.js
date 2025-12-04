@@ -10,14 +10,16 @@ const testData = {
     faction: 'stormcast', 
     factionLabel: 'Stormcast Eternals', 
     factionEmoji: '⚡', 
-    vp: '24' 
+    vp: '24',
+    spearhead: 'Cleansing Aqualith'
   },
   player2: { 
     name: 'Sigrid', 
     faction: 'nighthaunt', 
     factionLabel: 'Nighthaunt', 
     factionEmoji: '👻', 
-    vp: '18' 
+    vp: '18',
+    spearhead: 'Shroudwardens'
   },
   breakdown: null
 };

@@ -290,7 +290,7 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
   if (isWinner) {
     ctx.fillStyle = COLORS.gold;
     ctx.font = 'bold 20px ' + FONT_FAMILY;
-    ctx.fillText('- WINNER -', x, y + 165);
+    ctx.fillText('- WINNER -', x, y + 175);
   }
 }
 
