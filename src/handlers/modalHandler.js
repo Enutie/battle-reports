@@ -211,30 +211,30 @@ async function handleModal(interaction, sessions) {
     session.player1.vp = interaction.fields.getTextInputValue('p1_vp');
     session.player2.name = interaction.fields.getTextInputValue('p2_name');
     session.player2.vp = interaction.fields.getTextInputValue('p2_vp');
-    session.step = 'breakdown';
+    session.step = 'notes';
 
-    // Show breakdown options
-    const addBreakdownBtn = new ButtonBuilder()
-      .setCustomId('btn_add_breakdown')
-      .setLabel('Add Points Breakdown')
+    // Show notes options
+    const addNotesBtn = new ButtonBuilder()
+      .setCustomId('btn_add_notes')
+      .setLabel('Add Battle Notes')
       .setStyle(ButtonStyle.Secondary)
-      .setEmoji('📊');
+      .setEmoji('📝');
 
     const skipBtn = new ButtonBuilder()
-      .setCustomId('btn_skip_breakdown')
+      .setCustomId('btn_skip_notes')
       .setLabel('Generate Report')
       .setStyle(ButtonStyle.Primary)
       .setEmoji('⚔️');
 
-    const row = new ActionRowBuilder().addComponents(addBreakdownBtn, skipBtn);
+    const row = new ActionRowBuilder().addComponents(addNotesBtn, skipBtn);
 
     await interaction.reply({
-      content: `⚔️ **Battle Report Submission**\n\n✅ ${session.player1.factionEmoji} **${session.player1.name}** (${session.player1.factionLabel}): ${session.player1.vp} VP\n✅ ${session.player2.factionEmoji} **${session.player2.name}** (${session.player2.factionLabel}): ${session.player2.vp} VP\n✅ Date: ${session.date}\n\nStep 5/5: Would you like to add a points breakdown?`,
+      content: `⚔️ **Battle Report Submission**\n\n✅ ${session.player1.factionEmoji} **${session.player1.name}** (${session.player1.factionLabel}): ${session.player1.vp} VP\n✅ ${session.player2.factionEmoji} **${session.player2.name}** (${session.player2.factionLabel}): ${session.player2.vp} VP\n✅ Date: ${session.date}\n\nWould you like to add battle notes for the AI narrative? (e.g., "close game", "Morathi dominated")`,
       components: [row],
       ephemeral: true,
     });
-  } else if (interaction.customId === 'modal_breakdown') {
-    session.breakdown = interaction.fields.getTextInputValue('breakdown');
+  } else if (interaction.customId === 'modal_notes') {
+    session.notes = interaction.fields.getTextInputValue('notes');
     await generateAndPostReport(interaction, session, sessions);
   }
 }
@@ -248,23 +248,23 @@ async function handleButton(interaction, sessions) {
     });
   }
 
-  if (interaction.customId === 'btn_add_breakdown') {
+  if (interaction.customId === 'btn_add_notes') {
     const modal = new ModalBuilder()
-      .setCustomId('modal_breakdown')
-      .setTitle('Points Breakdown');
+      .setCustomId('modal_notes')
+      .setTitle('Battle Notes');
 
-    const breakdownInput = new TextInputBuilder()
-      .setCustomId('breakdown')
-      .setLabel('Points Breakdown')
+    const notesInput = new TextInputBuilder()
+      .setCustomId('notes')
+      .setLabel('Battle Notes (used for AI narrative)')
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('e.g., Objectives: P1 12, P2 8 | Battle Tactics: P1 12, P2 10')
+      .setPlaceholder('e.g., "Close game until turn 4", "Morathi dominated", "Lucky charge roll won it"')
       .setRequired(true)
-      .setMaxLength(200);
+      .setMaxLength(300);
 
-    modal.addComponents(new ActionRowBuilder().addComponents(breakdownInput));
+    modal.addComponents(new ActionRowBuilder().addComponents(notesInput));
 
     await interaction.showModal(modal);
-  } else if (interaction.customId === 'btn_skip_breakdown') {
+  } else if (interaction.customId === 'btn_skip_notes') {
     await generateAndPostReport(interaction, session, sessions);
   }
 }

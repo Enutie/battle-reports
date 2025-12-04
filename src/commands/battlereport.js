@@ -45,7 +45,7 @@ module.exports = {
       player1: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
       player2: { name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '' },
       date: '',
-      breakdown: null,
+      notes: null,
     });
 
     // Create game type select menu
