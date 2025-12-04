@@ -9,6 +9,8 @@ async function generateNarrative(reportData) {
   const p1VP = parseInt(player1.vp) || 0;
   const p2VP = parseInt(player2.vp) || 0;
   
+  console.log('Generating narrative with notes:', notes);
+  
   let winner, loser, winnerVP, loserVP;
   if (p1VP > p2VP) {
     winner = { name: player1.name, faction: player1.factionLabel, spearhead: player1.spearhead };
@@ -30,10 +32,12 @@ async function generateNarrative(reportData) {
     : `${player1.name}'s ${player1.factionLabel} fought ${player2.name}'s ${player2.factionLabel} to a ${p1VP}-${p2VP} draw in a ${gameType} battle.`;
 
   if (notes) {
-    context += ` Additional context: ${notes}`;
+    context += ` Key moments: ${notes}. Incorporate these details into the narrative.`;
   }
 
-  const prompt = `Write a dramatic 2-sentence Warhammer Age of Sigmar battle narrative. ${context} Be epic and grimdark. No intro, just the narrative.`;
+  const prompt = `Write a dramatic 2-3 sentence Warhammer Age of Sigmar battle narrative. ${context} Be epic and grimdark. No intro, just the narrative.`;
+  
+  console.log('Prompt:', prompt);
 
   try {
     const completion = await groq.chat.completions.create({
