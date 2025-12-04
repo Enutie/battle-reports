@@ -146,7 +146,7 @@ function drawCornerDecorations(ctx, width, height) {
 function drawHeader(ctx, width, gameType) {
   // "BATTLE REPORT" header
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'bold 42px "Georgia", serif';
+  ctx.font = 'bold 42px serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   
@@ -182,13 +182,13 @@ function drawHeader(ctx, width, gameType) {
 
   // Badge text
   ctx.fillStyle = COLORS.textLight;
-  ctx.font = 'bold 14px "Georgia", serif';
+  ctx.font = 'bold 14px serif';
   ctx.fillText(badgeText, width / 2, badgeY + 12);
 }
 
 function drawDate(ctx, width, date) {
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'italic 16px "Georgia", serif';
+  ctx.font = 'italic 16px serif';
   ctx.textAlign = 'center';
   ctx.fillText(date, width / 2, 135);
 }
@@ -235,7 +235,7 @@ function drawPlayerSections(ctx, width, height, reportData) {
 
   // VS text
   ctx.fillStyle = COLORS.accentRed;
-  ctx.font = 'bold 36px "Georgia", serif';
+  ctx.font = 'bold 36px serif';
   ctx.textAlign = 'center';
   ctx.fillText('VS', width / 2, 260);
 
@@ -248,29 +248,29 @@ function drawPlayerSection(ctx, x, y, player, isWinner) {
 
   // Player name
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'bold 22px "Georgia", serif';
+  ctx.font = 'bold 22px serif';
   const displayName = player.name.length > 15 ? player.name.substring(0, 15) + '...' : player.name;
   ctx.fillText(displayName, x, y);
 
   // Faction (without emoji - fonts don't support them well)
-  ctx.font = 'italic 16px "Georgia", serif';
+  ctx.font = 'italic 16px serif';
   ctx.fillStyle = COLORS.borderDark;
   ctx.fillText(player.factionLabel, x, y + 30);
 
   // Large VP number
-  ctx.font = 'bold 72px "Georgia", serif';
+  ctx.font = 'bold 72px serif';
   ctx.fillStyle = isWinner ? COLORS.accentRed : COLORS.textDark;
   ctx.fillText(player.vp, x, y + 110);
 
   // VP label
-  ctx.font = '14px "Georgia", serif';
+  ctx.font = '14px serif';
   ctx.fillStyle = COLORS.borderDark;
   ctx.fillText('Victory Points', x, y + 135);
 
   // Winner indicator
   if (isWinner) {
     ctx.fillStyle = COLORS.gold;
-    ctx.font = 'bold 20px "Georgia", serif';
+    ctx.font = 'bold 20px serif';
     ctx.fillText('- WINNER -', x, y + 165);
   }
 }
@@ -311,14 +311,14 @@ function drawResultBanner(ctx, width, height, reportData) {
 
   // Result text
   ctx.fillStyle = COLORS.textLight;
-  ctx.font = 'bold 20px "Georgia", serif';
+  ctx.font = 'bold 20px serif';
   ctx.textAlign = 'center';
   ctx.fillText(resultText, width / 2, bannerY + bannerHeight / 2 + 7);
 }
 
 function drawBreakdown(ctx, width, height, breakdown) {
   ctx.fillStyle = COLORS.textDark;
-  ctx.font = 'italic 14px "Georgia", serif';
+  ctx.font = 'italic 14px serif';
   ctx.textAlign = 'center';
 
   // Split breakdown into lines if too long
@@ -351,7 +351,7 @@ function drawFooter(ctx, width, height) {
 
   // Footer text
   ctx.fillStyle = COLORS.borderDark;
-  ctx.font = 'italic 14px "Georgia", serif';
+  ctx.font = 'italic 14px serif';
   ctx.textAlign = 'center';
   ctx.fillText('May your dice roll true', width / 2, height - 35);
 }
