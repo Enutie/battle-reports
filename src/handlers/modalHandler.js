@@ -9,31 +9,29 @@ const {
   AttachmentBuilder,
   EmbedBuilder,
 } = require('discord.js');
-const { getFactionsByGameType, getFactionByValue } = require('../data/factions');
+const { getFactionsByGameType, getFactionByValue, getGrandAlliances } = require('../data/factions');
 const { generateBattleReportImage } = require('../generators/imageGenerator');
 const { generateNarrative } = require('../generators/narrativeGenerator');
 
-// Helper to split factions into two select menus (Discord max 25 options per menu)
+// Helper to create 4 select menus by Grand Alliance
 function createFactionSelectMenus(baseId, gameType) {
-  const factions = getFactionsByGameType(gameType);
-  const mid = Math.ceil(factions.length / 2);
-  const first = factions.slice(0, mid);
-  const second = factions.slice(mid);
+  const alliances = getGrandAlliances();
+  
+  const rows = Object.entries(alliances).map(([key, alliance]) => {
+    const menu = new StringSelectMenuBuilder()
+      .setCustomId(`${baseId}_${key}`)
+      .setPlaceholder(`${alliance.emoji} ${alliance.label}`)
+      .addOptions(
+        alliance.factions.map(f => ({ 
+          label: f.label, 
+          value: f.value, 
+          emoji: f.emoji 
+        }))
+      );
+    return new ActionRowBuilder().addComponents(menu);
+  });
 
-  const menu1 = new StringSelectMenuBuilder()
-    .setCustomId(`${baseId}_1`)
-    .setPlaceholder('Order & Destruction factions')
-    .addOptions(first.map(f => ({ label: f.label, value: f.value, emoji: f.emoji })));
-
-  const menu2 = new StringSelectMenuBuilder()
-    .setCustomId(`${baseId}_2`)
-    .setPlaceholder('Chaos & Death factions')
-    .addOptions(second.map(f => ({ label: f.label, value: f.value, emoji: f.emoji })));
-
-  return [
-    new ActionRowBuilder().addComponents(menu1),
-    new ActionRowBuilder().addComponents(menu2),
-  ];
+  return rows;
 }
 
 async function handleSelectMenu(interaction, sessions) {
@@ -63,7 +61,7 @@ async function handleSelectMenu(interaction, sessions) {
         content: '⚔️ **Battle Report Submission**\n\nStep 2/5: Select **Player 1** faction:',
         components: rows,
       });
-    } else if (customId === 'select_p1_faction_1' || customId === 'select_p1_faction_2') {
+    } else if (customId.startsWith('select_p1_faction_')) {
       const faction = getFactionByValue(session.gameType, value);
       if (!faction) {
         console.error('Faction not found:', value);
@@ -80,7 +78,7 @@ async function handleSelectMenu(interaction, sessions) {
         content: `⚔️ **Battle Report Submission**\n\n✅ Player 1: ${faction.emoji} ${faction.label}\n\nStep 3/5: Select **Player 2** faction:`,
         components: rows,
       });
-    } else if (customId === 'select_p2_faction_1' || customId === 'select_p2_faction_2') {
+    } else if (customId.startsWith('select_p2_faction_')) {
       const faction = getFactionByValue(session.gameType, value);
       if (!faction) {
         console.error('Faction not found:', value);
