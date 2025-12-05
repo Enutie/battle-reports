@@ -22,76 +22,77 @@ const UNDERWORLDS_FORMATS = [
   { value: 'championship', label: 'Championship', emoji: '🏆' },
 ];
 
-// Underworlds Warbands organized by Grand Alliance
+// Underworlds Warbands organized by Grand Alliance (Embergard 2nd Edition legal)
 const UNDERWORLDS_WARBANDS = {
   order: {
     label: 'Order',
     emoji: '⚔️',
     warbands: [
+      // Embergard new warbands
       { value: 'emberwatch', label: 'The Emberwatch' },
-      { value: 'jaws_of_itzl', label: 'The Jaws of Itzl' },
+      { value: 'jaws_of_itzl', label: 'Jaws of Itzl' },
+      { value: 'knives_of_crone', label: 'Knives of the Crone' },
+      // Grand Alliance Order box
       { value: 'hexbanes_hunters', label: "Hexbane's Hunters" },
       { value: 'myaris_purifiers', label: "Myari's Purifiers" },
-      { value: 'storm_of_celestus', label: 'Storm of Celestus' },
       { value: 'farstriders', label: 'Farstriders' },
-      { value: 'steelhearts_champions', label: "Steelheart's Champions" },
-      { value: 'ylthari_guardians', label: "Ylthari's Guardians" },
-      { value: 'stormsires_cursebreakers', label: "Stormsire's Cursebreakers" },
-      { value: 'godsworn_hunt', label: 'Godsworn Hunt' },
-      { value: 'knives_of_crone', label: 'Knives of the Crone' },
+      { value: 'ironsoul_condemnors', label: "Ironsoul's Condemnors" },
     ],
   },
   chaos: {
     label: 'Chaos',
     emoji: '🔥',
     warbands: [
+      // Embergard new warbands
       { value: 'zikkits_tunnelpack', label: "Zikkit's Tunnelpack" },
       { value: 'grandfathers_gardeners', label: "Grandfather's Gardeners" },
-      { value: 'eyes_of_nine', label: 'Eyes of the Nine' },
+      // Grand Alliance Chaos box
       { value: 'spiteclaws_swarm', label: "Spiteclaw's Swarm" },
-      { value: 'garreks_reavers', label: "Garrek's Reavers" },
-      { value: 'magores_fiends', label: "Magore's Fiends" },
-      { value: 'the_unmade', label: 'The Unmade' },
-      { value: 'the_dread_pageant', label: 'The Dread Pageant' },
-      { value: 'khagras_ravagers', label: "Khagra's Ravagers" },
+      { value: 'cyrenis_razors', label: "Cyreni's Razors" },
+      { value: 'thricefold_discord', label: 'Thricefold Discord' },
+      { value: 'skinnerkin', label: 'Skinnerkin' },
     ],
   },
   death: {
     label: 'Death',
     emoji: '💀',
     warbands: [
+      // Grand Alliance Death box
       { value: 'sepulchral_guard', label: 'The Sepulchral Guard' },
       { value: 'thorns_of_briar_queen', label: 'Thorns of the Briar Queen' },
-      { value: 'the_exiled_dead', label: 'The Exiled Dead' },
-      { value: 'grymwatch', label: 'Grymwatch' },
-      { value: 'crimson_court', label: 'The Crimson Court' },
-      { value: 'mollogs_mob', label: "Mollog's Mob" },
+      { value: 'zondaras_gravebreakers', label: "Zondara's Gravebreakers" },
+      { value: 'brethren_of_bolt', label: 'Brethren of the Bolt' },
     ],
   },
   destruction: {
     label: 'Destruction',
     emoji: '💥',
     warbands: [
+      // Embergard new warbands
       { value: 'borgits_beastgrabbaz', label: "Borgit's Beastgrabbaz" },
-      { value: 'morgoks_krushas', label: "Morgok's Krushas" },
-      { value: 'ironskull_boyz', label: "Ironskull's Boyz" },
-      { value: 'hrothgorns_mantrappers', label: "Hrothgorn's Mantrappers" },
+      // Grand Alliance Destruction box
       { value: 'zarbags_gitz', label: "Zarbag's Gitz" },
-      { value: 'rippas_snarlfangs', label: "Rippa's Snarlfangs" },
+      { value: 'mollogs_mob', label: "Mollog's Mob" },
+      { value: 'daggoks_stabladz', label: "Daggok's Stab-ladz" },
     ],
   },
 };
 
-// Underworlds Rivals Decks
+// Underworlds Rivals Decks (Embergard 2nd Edition)
 const UNDERWORLDS_DECKS = [
-  { value: 'countdown_to_cataclysm', label: 'Countdown to Cataclysm' },
-  { value: 'pillage_and_plunder', label: 'Pillage and Plunder' },
+  // Core Box decks
   { value: 'blazing_assault', label: 'Blazing Assault' },
   { value: 'emberstone_sentinels', label: 'Emberstone Sentinels' },
-  { value: 'force_of_frost', label: 'Force of Frost' },
-  { value: 'toxic_terrors', label: 'Toxic Terrors' },
-  { value: 'rimelocked_relics', label: 'Rimelocked Relics' },
-  { value: 'breakneck_slaughter', label: 'Breakneck Slaughter' },
+  { value: 'pillage_and_plunder', label: 'Pillage and Plunder' },
+  { value: 'countdown_to_cataclysm', label: 'Countdown to Cataclysm' },
+  // Universal expansion decks
+  { value: 'hunting_grounds', label: 'Hunting Grounds' },
+  { value: 'deadly_synergy', label: 'Deadly Synergy' },
+  { value: 'raging_slayers', label: 'Raging Slayers' },
+  { value: 'realmstone_raiders', label: 'Realmstone Raiders' },
+  { value: 'edge_of_the_knife', label: 'Edge of the Knife' },
+  { value: 'reckless_fury', label: 'Reckless Fury' },
+  { value: 'wrack_and_ruin', label: 'Wrack and Ruin' },
   { value: 'custom', label: 'Custom/Other' },
 ];
 
