@@ -47,11 +47,11 @@ module.exports = {
       underworldsFormat: null,    // For Underworlds
       player1: { 
         name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '',
-        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: ''
+        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: '', deck2: '', deck2Label: ''
       },
       player2: { 
         name: '', faction: '', factionLabel: '', factionEmoji: '', vp: '', spearhead: '',
-        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: ''
+        warband: '', warbandLabel: '', alliance: '', allianceEmoji: '', deck: '', deckLabel: '', deck2: '', deck2Label: ''
       },
       date: '',
       notes: null,

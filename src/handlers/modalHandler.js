@@ -140,30 +140,64 @@ async function handleSelectMenu(interaction, sessions) {
       session.player1.alliance = warband.alliance;
       session.player1.allianceEmoji = warband.allianceEmoji;
       
-      // Ask for deck
-      session.step = 'player1Deck';
+      // Ask for deck 1
+      session.step = 'player1Deck1';
       const decks = getUnderworldsDecks();
       const menu = new StringSelectMenuBuilder()
-        .setCustomId('select_p1_deck')
-        .setPlaceholder('Select Rivals deck')
+        .setCustomId('select_p1_deck1')
+        .setPlaceholder('Select Rivals deck' + (session.underworldsFormat === 'nemesis' ? ' #1' : ''))
         .addOptions(decks.map(d => ({ label: d.label, value: d.value })));
       const row = new ActionRowBuilder().addComponents(menu);
+      const deckPrompt = session.underworldsFormat === 'nemesis' 
+        ? 'Select **Player 1** first Rivals deck (Nemesis uses 2 decks):'
+        : 'Select **Player 1** Rivals deck:';
       await interaction.update({
-        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${warband.allianceEmoji} ${warband.label}\n\nSelect **Player 1** Rivals deck:`,
+        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${warband.allianceEmoji} ${warband.label}\n\n${deckPrompt}`,
         components: [row],
       });
-    } else if (customId === 'select_p1_deck') {
-      // Player 1 deck selected
+    } else if (customId === 'select_p1_deck1') {
+      // Player 1 first deck selected
       const decks = getUnderworldsDecks();
       const deck = decks.find(d => d.value === value);
       session.player1.deck = value;
       session.player1.deckLabel = deck ? deck.label : value;
       
-      // Move to player 2 warband
+      if (session.underworldsFormat === 'nemesis') {
+        // Nemesis needs a second deck
+        session.step = 'player1Deck2';
+        // Filter out the already selected deck
+        const remainingDecks = decks.filter(d => d.value !== value);
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_p1_deck2')
+          .setPlaceholder('Select Rivals deck #2')
+          .addOptions(remainingDecks.map(d => ({ label: d.label, value: d.value })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        await interaction.update({
+          content: `🏰 **Underworlds Battle Report** (Nemesis)\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel}\n✅ Deck 1: ${session.player1.deckLabel}\n\nSelect **Player 1** second Rivals deck:`,
+          components: [row],
+        });
+      } else {
+        // Rivals format - move to player 2
+        session.step = 'player2Warband';
+        const rows = createWarbandSelectMenus('select_p2_warband');
+        await interaction.update({
+          content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n\nSelect **Player 2** warband:`,
+          components: rows,
+        });
+      }
+    } else if (customId === 'select_p1_deck2') {
+      // Player 1 second deck (Nemesis only)
+      const decks = getUnderworldsDecks();
+      const deck = decks.find(d => d.value === value);
+      session.player1.deck2 = value;
+      session.player1.deck2Label = deck ? deck.label : value;
+      session.player1.deckLabel = `${session.player1.deckLabel} + ${session.player1.deck2Label}`;
+      
+      // Move to player 2
       session.step = 'player2Warband';
       const rows = createWarbandSelectMenus('select_p2_warband');
       await interaction.update({
-        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n\nSelect **Player 2** warband:`,
+        content: `🏰 **Underworlds Battle Report** (Nemesis)\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel}\n✅ Decks: ${session.player1.deckLabel}\n\nSelect **Player 2** warband:`,
         components: rows,
       });
     } else if (customId.startsWith('select_p2_warband_')) {
@@ -177,24 +211,53 @@ async function handleSelectMenu(interaction, sessions) {
       session.player2.alliance = warband.alliance;
       session.player2.allianceEmoji = warband.allianceEmoji;
       
-      // Ask for deck
-      session.step = 'player2Deck';
+      // Ask for deck 1
+      session.step = 'player2Deck1';
       const decks = getUnderworldsDecks();
       const menu = new StringSelectMenuBuilder()
-        .setCustomId('select_p2_deck')
-        .setPlaceholder('Select Rivals deck')
+        .setCustomId('select_p2_deck1')
+        .setPlaceholder('Select Rivals deck' + (session.underworldsFormat === 'nemesis' ? ' #1' : ''))
         .addOptions(decks.map(d => ({ label: d.label, value: d.value })));
       const row = new ActionRowBuilder().addComponents(menu);
+      const deckPrompt = session.underworldsFormat === 'nemesis' 
+        ? 'Select **Player 2** first Rivals deck:'
+        : 'Select **Player 2** Rivals deck:';
       await interaction.update({
-        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n✅ Player 2: ${warband.allianceEmoji} ${warband.label}\n\nSelect **Player 2** Rivals deck:`,
+        content: `🏰 **Underworlds Battle Report**\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n✅ Player 2: ${warband.allianceEmoji} ${warband.label}\n\n${deckPrompt}`,
         components: [row],
       });
-    } else if (customId === 'select_p2_deck') {
-      // Player 2 deck selected - show details modal
+    } else if (customId === 'select_p2_deck1') {
+      // Player 2 first deck selected
       const decks = getUnderworldsDecks();
       const deck = decks.find(d => d.value === value);
       session.player2.deck = value;
       session.player2.deckLabel = deck ? deck.label : value;
+      
+      if (session.underworldsFormat === 'nemesis') {
+        // Nemesis needs a second deck
+        session.step = 'player2Deck2';
+        const remainingDecks = decks.filter(d => d.value !== value);
+        const menu = new StringSelectMenuBuilder()
+          .setCustomId('select_p2_deck2')
+          .setPlaceholder('Select Rivals deck #2')
+          .addOptions(remainingDecks.map(d => ({ label: d.label, value: d.value })));
+        const row = new ActionRowBuilder().addComponents(menu);
+        await interaction.update({
+          content: `🏰 **Underworlds Battle Report** (Nemesis)\n\n✅ Player 1: ${session.player1.allianceEmoji} ${session.player1.warbandLabel} (${session.player1.deckLabel})\n✅ Player 2: ${session.player2.allianceEmoji} ${session.player2.warbandLabel}\n✅ Deck 1: ${session.player2.deckLabel}\n\nSelect **Player 2** second Rivals deck:`,
+          components: [row],
+        });
+      } else {
+        // Rivals format - show details modal
+        session.step = 'details';
+        await showUnderworldsDetailsModal(interaction, session);
+      }
+    } else if (customId === 'select_p2_deck2') {
+      // Player 2 second deck (Nemesis only) - show details modal
+      const decks = getUnderworldsDecks();
+      const deck = decks.find(d => d.value === value);
+      session.player2.deck2 = value;
+      session.player2.deck2Label = deck ? deck.label : value;
+      session.player2.deckLabel = `${session.player2.deckLabel} + ${session.player2.deck2Label}`;
       
       session.step = 'details';
       await showUnderworldsDetailsModal(interaction, session);
